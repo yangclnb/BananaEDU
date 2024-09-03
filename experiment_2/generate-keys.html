@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <title>生成秘钥</title>
+    <link rel="stylesheet" href="./styles/main.css" />
+  </head>
+
+  <body>
+    <nav>
+      <a class="selected" href="./generate-keys.html">生成秘钥</a>
+      <a href="./encrypt-text.html">加密信息</a>
+      <a href="./decrypt-text.html">解密信息</a>
+      <!-- <a href="encrypt-file.html">Encrypt File</a>
+            <a href="decrypt-file.html">Decrypt File</a> -->
+    </nav>
+
+    <div class="page">
+      <h1>生成你的 RSA 非对称加密秘钥 😁</h1>
+      <p class="header-description">
+        想要体验神奇的非对称加密，没有秘钥可不行，点击下方按钮生成密钥
+      </p>
+
+      <button id="button">点击生成秘钥</button>
+      <div id="message"></div>
+
+      <div id="result">
+        <div class="field">
+          <label for="public-key"
+            >这是你的公钥 | 公钥可以透露给想要给你发送加密信息的人</label
+          >
+          <a id="public-key-download" class="download" download="id_rsa.pub"
+            >下载你的公钥 id_rsa.pub</a
+          >
+          <textarea id="public-key-text" rows="10" readonly></textarea>
+        </div>
+
+        <div class="field">
+          <label for="private-key"
+            >这是你的私钥 | 私钥只能自己持有，不要泄露哦</label
+          >
+          <a id="private-key-download" class="download" download="id_rsa"
+            >下载你的私钥 id_rsa</a
+          >
+          <textarea id="private-key-text" rows="10" readonly></textarea>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>佛冈县信息科技教育平台|作者：杨晨龙</p>
+    </footer>
+  </body>
+
+  <script src="./scripts/encoding-helper.js"></script>
+  <script src="./scripts/encryption-helper.js"></script>
+  <script>
+    (function () {
+      var publicKeyText = document.getElementById("public-key-text");
+      var publicKeyDownload = document.getElementById("public-key-download");
+      var privateKeyText = document.getElementById("private-key-text");
+      var privateKeyDownload = document.getElementById("private-key-download");
+      var button = document.getElementById("button");
+      var message = document.getElementById("message");
+      var result = document.getElementById("result");
+
+      var success = function (keys) {
+        publicKeyText.value = arrayBufferToPem(
+          keys.publicKeyBuffer,
+          "RSA PUBLIC KEY"
+        );
+        publicKeyDownload.href = window.URL.createObjectURL(
+          new Blob([publicKeyText.value], { type: "application/octet-stream" })
+        );
+        privateKeyText.value = arrayBufferToPem(
+          keys.privateKeyBuffer,
+          "RSA PRIVATE KEY"
+        );
+        privateKeyDownload.href = window.URL.createObjectURL(
+          new Blob([privateKeyText.value], { type: "application/octet-stream" })
+        );
+        result.style.display = "block";
+        message.innerText = null;
+        button.disabled = false;
+      };
+
+      var error = function (error) {
+        message.innerText = error;
+        button.disabled = false;
+      };
+
+      var process = function () {
+        message.innerText = "正在生成密钥...";
+        button.disabled = true;
+        generateRsaKeys().then(success, error);
+      };
+
+      var warn = function () {
+        if (privateKey.value === "") return;
+        return "你确定要删除密钥吗？除非你已经保存了密钥，否则它们会丢失的。";
+      };
+
+      button.addEventListener("click", process);
+      window.onbeforeunload = warn;
+    })();
+  </script>
+</html>

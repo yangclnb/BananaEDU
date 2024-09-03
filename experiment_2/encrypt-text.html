@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <title>加密信息</title>
+    <link rel="stylesheet" href="styles/main.css" />
+  </head>
+
+  <body>
+    <nav>
+      <a href="generate-keys.html">生成秘钥</a>
+      <a class="selected" href="encrypt-text.html">加密信息</a>
+      <a href="decrypt-text.html">解密信息</a>
+      <!-- <a href="encrypt-file.html">Encrypt File</a>
+            <a href="decrypt-file.html">Decrypt File</a> -->
+    </nav>
+
+    <div class="page">
+      <h1>使用 公钥 加密数据 🔐</h1>
+      <p class="header-description">
+        当你收到了其他人的 RSA
+        公钥，那就尝试将你想对他说的话用他的公钥进行加密吧 ~
+      </p>
+
+      <div class="field">
+        <label for="public-key">在下方输入你收到的公钥</label>
+        <textarea id="public-key" rows="10"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="text-to-encrypt">在下方输入你你想加密的内容</label>
+        <textarea id="text-to-encrypt" rows="10"></textarea>
+      </div>
+
+      <button id="button">点击按钮进行加密🔒</button>
+      <div id="message"></div>
+
+      <div id="result" class="field">
+        <label for="encrypted-text">加密后的内容</label>
+        <a id="encrypted-download" class="download" download="encrypted.txt"
+          >点击下载加密后的内容 encrypted.txt</a
+        >
+        <textarea id="encrypted-text" rows="10" readonly></textarea>
+      </div>
+    </div>
+
+    <footer>
+        <p>佛冈县信息科技教育平台|作者：杨晨龙</p>
+      </footer>
+  </body>
+
+  <script src="scripts/encoding-helper.js"></script>
+  <script src="scripts/encryption-helper.js"></script>
+  <script>
+    (function () {
+      var publicKey = document.getElementById("public-key");
+      var textToEncrypt = document.getElementById("text-to-encrypt");
+      var button = document.getElementById("button");
+      var message = document.getElementById("message");
+      var encryptedText = document.getElementById("encrypted-text");
+      var encryptedDownload = document.getElementById("encrypted-download");
+      var result = document.getElementById("result");
+
+      var success = function (data) {
+        encryptedText.value = arrayBufferToPem(data, "RSA TEXT");
+        encryptedDownload.href = window.URL.createObjectURL(
+          new Blob([encryptedText.value], { type: "text/plain" })
+        );
+        result.style.display = "block";
+        message.innerText = null;
+        button.disabled = false;
+      };
+
+      var error = function (error) {
+        message.innerText = error;
+        button.disabled = false;
+      };
+
+      var process = function () {
+        message.innerText = "正在加密...";
+        button.disabled = true;
+
+        if (publicKey.value.trim() === "")
+          return error("必须指定公钥，才能加密哦");
+
+        var publicKeyArrayBuffer = null;
+        try {
+          publicKeyArrayBuffer = pemToArrayBuffer(publicKey.value.trim());
+        } catch (_) {
+          return error("这个公钥无效，检查看看是不是漏了什么");
+        }
+
+        if (textToEncrypt.value.trim() === "")
+          return error("必须指定要加密的内容，才能加密哦");
+
+        var data = new TextEncoder().encode(textToEncrypt.value);
+
+        rsaEncrypt(data, publicKeyArrayBuffer).then(success, error);
+      };
+
+      button.addEventListener("click", process);
+    })();
+  </script>
+</html>

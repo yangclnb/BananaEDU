@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <title>解密信息</title>
+    <link rel="stylesheet" href="styles/main.css" />
+  </head>
+
+  <body>
+    <nav>
+      <a href="generate-keys.html">生成秘钥</a>
+      <a href="encrypt-text.html">加密信息</a>
+      <a class="selected" href="decrypt-text.html">解密信息</a>
+      <!-- <a href="encrypt-file.html">Encrypt File</a>
+            <a href="decrypt-file.html">Decrypt File</a> -->
+    </nav>
+
+    <div class="page">
+      <h1>使用 私钥 解密数据 🔓</h1>
+      <p class="header-description">
+        当你收到了一份加密内容，你可以尝试使用自己的私钥进行解密，查看明文内容
+      </p>
+
+      <div class="field">
+        <label for="private-key">在下方输入你收到的私钥</label>
+        <textarea id="private-key" rows="10"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="encrypted-text">在下方输入你收到的密文</label>
+        <textarea id="encrypted-text" rows="10"></textarea>
+      </div>
+
+      <button id="button">点击按钮进行解密🔑</button>
+      <div id="message"></div>
+
+      <div id="result" class="field">
+        <label for="decrypted-text">解密结果</label>
+        <a id="decrypted-download" class="download" download="decrypted.txt"
+          >点击下载解密后的内容 decrypted.txt</a
+        >
+        <textarea id="decrypted-text" rows="10" readonly></textarea>
+      </div>
+    </div>
+
+    <footer>
+      <p>佛冈县信息科技教育平台|作者：杨晨龙</p>
+    </footer>
+  </body>
+
+  <script src="scripts/encoding-helper.js"></script>
+  <script src="scripts/encryption-helper.js"></script>
+  <script>
+    (function () {
+      var privateKey = document.getElementById("private-key");
+      var encryptedText = document.getElementById("encrypted-text");
+      var button = document.getElementById("button");
+      var message = document.getElementById("message");
+      var decryptedText = document.getElementById("decrypted-text");
+      var decryptedDownload = document.getElementById("decrypted-download");
+      var result = document.getElementById("result");
+
+      var success = function (data) {
+        decryptedText.value = new TextDecoder().decode(data);
+        decryptedDownload.href = window.URL.createObjectURL(
+          new Blob([decryptedText.value], { type: "text/plain" })
+        );
+        result.style.display = "block";
+        message.innerText = null;
+        button.disabled = false;
+      };
+
+      var error = function (error) {
+        message.innerText = error;
+        button.disabled = false;
+      };
+
+      var process = function () {
+        message.innerText = "正在解密...";
+        button.disabled = true;
+
+        if (privateKey.value.trim() === "")
+          return error("必须提供私钥，才能解密哦");
+
+        var privateKeyArrayBuffer = null;
+        try {
+          privateKeyArrayBuffer = pemToArrayBuffer(privateKey.value.trim());
+        } catch (_) {
+          return error("这个私钥无效，检查看看是不是漏了什么");
+        }
+
+        if (encryptedText.value.trim() === "")
+          return error("必须提供需要解密的内容，才能才能哦");
+
+        var data = null;
+        try {
+          data = pemToArrayBuffer(encryptedText.value.trim());
+        } catch (_) {
+          return error("密文无效，检查看看是不是漏了什么");
+        }
+
+        rsaDecrypt(data, privateKeyArrayBuffer).then(success, error);
+      };
+
+      button.addEventListener("click", process);
+    })();
+  </script>
+</html>

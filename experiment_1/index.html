@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>凯撒密码</title>
+
+  <style>
+    body {
+      background-color: #c9e6e8;
+      color: #039293;
+    }
+
+    #content {
+      border-radius: 20px;
+      background-color: #6ec4c8;
+      box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
+      width: 800px;
+      text-align: center;
+      margin: 100px auto 0 auto;
+      padding: 40px 0;
+    }
+
+    #content>h1 {
+      margin: 0 0 20px 0;
+    }
+
+    #password {
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+      margin-bottom: 20px;
+    }
+
+    #original {
+      display: flex;
+    }
+
+    #new {
+      display: flex;
+    }
+
+    .wordbox {
+      border: 1px #039293 solid;
+      padding: 1px;
+    }
+
+    .wordbox p {
+      border-right: 1px #039293 solid;
+      min-width: 20px;
+      text-align: center;
+      padding: 1px 3px;
+      margin: 5px 0px 5px 0px;
+    }
+
+    .wordbox p:last-child {
+      border-right: none;
+    }
+
+    #password div>h3 {
+      margin: 15px 0px 10px 0px;
+    }
+
+
+    #buttonbox {
+      display: flex;
+      justify-content: space-around;
+      max-width: 705px;
+      margin: 0 auto;
+    }
+
+    #buttonbox input {
+      border-radius: 20px;
+      font-size: 20px;
+      padding: 5px 30px;
+      color: #039293;
+      border: #039293;
+      background-color: #c9e6e8;
+    }
+
+    #inputBox {
+      display: flex;
+      flex-direction: column;
+      max-width: 705px;
+      margin: 0 auto;
+      font-size: 20px;
+    }
+
+    #inputBox div {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 30px;
+    }
+
+    #inputBox div input {
+      width: 85%;
+      height: 70px;
+      font-size: 20px;
+      padding-left: 20px;
+      border-radius: 15px;
+      color: #039293;
+      border: #039293;
+      outline: #039293 2px;
+      background-color: #c9e6e8;
+    }
+
+    #operation {
+
+      display: flex;
+      justify-content: space-around;
+      max-width: 705px;
+      margin: 30px auto 0 auto;
+      font-size: 20px;
+
+      transition: all;
+    }
+
+    #operation input {
+      border-radius: 20px;
+      font-size: 20px;
+      padding: 5px 30px;
+      color: #039293;
+      border: #039293;
+      background-color: #c9e6e8;
+    }
+
+    #footer{
+      text-align: center;
+      color: #039293;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="content">
+    <h1 id="title">凯撒密码 - 加密</h1>
+    <div id="password">
+
+      <div>
+        <h3>原始排列</h3>
+        <div id="original" class="wordbox"></div>
+      </div>
+      <div>
+        <h3>调整后排列</h3>
+        <div id="new" class="wordbox"></div>
+      </div>
+
+    </div>
+
+    <div id="buttonbox">
+      <input type="button" value="👈向左移动" onclick="toLeft()">
+      <h3 id="key">密钥 : a => a</h3>
+      <input type="button" value="向右移动👉" onclick="toRight()">
+    </div>
+
+    <div id="inputBox">
+      <div>
+        <p id="inputText1">明文 ：</p><input type="text" id="secret">
+      </div>
+      <div>
+        <p id="inputText2">密文 ：</p><input type="text" id="result" readonly="readonly">
+      </div>
+    </div>
+
+    <div id="operation">
+      <input type="button" id="encryption" value="🔒加密" onclick="encryption()">
+      <input type="button" id="decrypt" value="🔑解密" onclick="decrypt()">
+    </div>
+
+  </div>
+
+  <h4 id="footer">佛冈县信息科技教育平台|作者：杨晨龙</h4>
+
+  <script>
+    let node = document.querySelector("#password").children
+
+    let list = {
+      old: [],
+      new: []
+    }
+
+    let timer;
+
+    // console.log(node)
+
+    let block1 = document.querySelector("#original")
+    let block2 = document.querySelector("#new")
+
+    let button = document.querySelectorAll("input[type=button]")
+
+    let resultNode = document.querySelector("#result")
+    let secretNode = document.querySelector("#secret")
+
+    let key = document.querySelector("#key")
+
+    let title = document.querySelector("#title")
+    let inputText1 = document.querySelector("#inputText1")
+    let inputText2 = document.querySelector("#inputText2")
+
+    let encryptionBtn = document.querySelector("#encryption")
+    let decryptBtn = document.querySelector("#decrypt")
+
+    // 按钮状态标志
+    let flag = true
+
+    // 是加密
+    let isEncryption = true
+
+    //初始化密码
+    initOriginal()
+
+    // 绑定密码输入事件
+    secretNode.addEventListener("input", (event) => {
+      translate(event.target.value)
+    })
+
+
+    function toLeft() {
+      // 禁止点击按钮
+      changeButton()
+
+      // 设置向左动画
+      let i = 0
+      timer = setInterval(() => {
+        i += 6
+        block2.style.marginRight = i.toString() + "px"
+      }, 50)
+
+      // 一秒后停止动画
+      setTimeout(() => {
+        clearInterval(timer)
+        block2.style.marginRight = "0px"
+
+        // 更新对应的数据
+        let temp = list.new.shift();
+        list.new.push(temp)
+        update()
+
+        // 恢复鼠标点击
+        changeButton()
+
+        // 更新解密后内容
+        translate(secret.value)
+
+        // 改变key
+        changeKey()
+      }, 500)
+
+    }
+
+    function toRight() {
+      changeButton()
+      // 设置向左动画
+      let i = 0
+      timer = setInterval(() => {
+        i += 6
+        block2.style.marginLeft = i.toString() + "px"
+      }, 50)
+
+      // 一秒后停止动画
+      setTimeout(() => {
+        clearInterval(timer)
+        block2.style.marginLeft = "0px"
+
+        // 更新对应的数据
+        let temp = list.new.pop();
+        list.new.unshift(temp)
+        update()
+
+        // 恢复鼠标点击
+        changeButton()
+
+        // 更新解密后内容
+        translate(secret.value)
+
+        // 改变key
+        changeKey()
+      }, 500)
+
+
+    }
+
+    function initOriginal() {
+      list = {
+        old: [],
+        new: []
+      }
+
+      flag = true
+
+      for (let index = 0; index < 26; index++) {
+        let char = String.fromCharCode(index + 97)
+        list.old.push(char)
+        list.new.push(char)
+      }
+
+      block1.innerHTML = ""
+      for (let index = 0; index < 26; index++) {
+        let p = document.createElement("p");
+        p.innerText = list.old[index]
+        block1.appendChild(p)
+      }
+
+      update()
+
+      highLightBtn()
+    }
+
+    function update() {
+      block2.innerHTML = ""
+      for (let index = 0; index < 26; index++) {
+        let p = document.createElement("p");
+        p.innerText = list.new[index]
+        block2.appendChild(p)
+      }
+    }
+
+    // 播放途中不准再次点击
+    function changeButton() {
+      if (flag == true) {
+        button[0].style.pointerEvents = "none"
+        button[1].style.pointerEvents = "none"
+        flag = false
+      } else {
+        button[0].style.pointerEvents = "auto"
+        button[1].style.pointerEvents = "auto"
+        flag = true
+      }
+    }
+
+    // 解密密码
+    function translate(psd) {
+      let result = "";
+      for (let i = 0; i < psd.length; i++) {
+        let getIndex = list.old.indexOf(psd[i])
+
+        if (getIndex == -1) result += " "
+        else result += list.new[getIndex]
+      }
+
+      resultNode.value = result
+    }
+
+    function changeKey() {
+      if (isEncryption) {
+        let index = list.new.indexOf("a")
+        key.textContent = "密钥 : " + "a => " + list.old[index]
+      } else key.textContent = "密钥 : " + list.old[0] + " => " + list.new[0]
+    }
+
+
+    // h knud hmenlzshnm sdbgmnknfx
+
+    // 加密
+    function encryption() {
+      title.textContent = "凯撒密码 - 加密"
+      inputText1.textContent = "明文 ："
+      inputText2.textContent = "密文 ："
+
+
+      resultNode.value = ""
+      secretNode.value = ""
+
+      isEncryption = true
+      initOriginal()
+
+      changeKey()
+
+      highLightBtn()
+    }
+
+    // 解密
+    function decrypt() {
+      title.textContent = "凯撒密码 - 解密"
+      inputText1.textContent = "密文 ："
+      inputText2.textContent = "明文 ："
+
+      resultNode.value = ""
+      secretNode.value = ""
+
+      isEncryption = false
+      initOriginal()
+
+      changeKey()
+
+      highLightBtn()
+    }
+
+    // 高亮按钮
+    function highLightBtn() {
+
+      if (isEncryption) {
+        encryptionBtn.style.backgroundColor = "#77d1d7"
+        decryptBtn.style.backgroundColor = "#c9e6e8"
+      } else {
+        encryptionBtn.style.backgroundColor = "#c9e6e8"
+        decryptBtn.style.backgroundColor = "#77d1d7"
+      }
+    }
+
+  </script>
+
+</body>
+
+</html>
